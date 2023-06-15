@@ -1,6 +1,10 @@
 
 class Render {
-    constructor(fps) {
+    constructor(fps, context) {
+
+        this.cvs = context.cvs
+        this.$ = context.pen
+
         this.fps = fps
         this.lastRenderTime = +new Date()
         this.fpsInterval = 1000 / this.fps
@@ -14,6 +18,8 @@ class Render {
         let elapsed = renderTime - this.lastRenderTime
         if (elapsed > this.fpsInterval) {
             this.lastRenderTime = renderTime - (elapsed % this.fpsInterval)
+
+            this.$.clearRect(0, 0, this.cvs.width, this.cvs.height)
 
             for (const key in instances) {
                 instances[key].draw()

@@ -11,12 +11,12 @@ const instances = {
     Map: null,
 }
 
-function initMap(w, h) {
-    instances.Map = new GMap(w, h)
+function initMap(w, h, canvas) {
+    instances.Map = new GMap(w, h, canvas)
 }
 
-function initRender(fps = 1) {
-    RenderInstace = new GRender(fps)
+function initRender(fps = 30) {
+    RenderInstace = new GRender(fps, canvas)
 
     RenderInstace.run(instances)
 }
@@ -25,7 +25,7 @@ const canvas = {
     cvs: null,
     pen: null
 }
-export function init(cvs, pen, w, h) {
+export function init(cvs, pen, w, h, fps) {
     canvas.cvs = cvs
     canvas.pen = pen
 
@@ -34,8 +34,8 @@ export function init(cvs, pen, w, h) {
     canvas.cvs.style = `position: absolute;top: 50%;left: 50%;transform: translate(-50%,-50%);background-color:rgba(230,230,230,0)`
     document.body.insertBefore(canvas.cvs, null)
 
-    initMap(w, h)
+    initMap(w, h, canvas)
 
-    initRender()
+    initRender(fps)
 
 }
