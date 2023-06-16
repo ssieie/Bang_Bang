@@ -17,7 +17,6 @@ class Start {
         this.size = getRandomFloat(2, 4)
         this.speed = getRandomFloat(0.1, 0.5)
         this.color = getRandColorRange(200, 255)
-        this.dodge = "3700ff"
     }
 
     move() {
@@ -36,7 +35,7 @@ class Start {
     draw() {
         this.$.beginPath()
         this.$.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
-        getRandomInt(0, 5) === 0 ? this.$.fillStyle = this.dodge.cS : this.$.fillStyle = this.color.cS
+        this.$.fillStyle = this.color.cS
         this.$.fill()
         this.$.closePath()
     }
@@ -47,7 +46,7 @@ class Weather {
     // 已知y:-600,x:0,(h,k)顶点坐标为（500，-10）得到-600 = a(0 - 500)^2 - 10
     // 求得a：-0.0024 因为canvas坐标系跟正常坐标系的区别取0.0024
     constructor(cvs, pen) {
-        this.type = false // sun or moon
+        this.type = true // sun or moon
         this.vertex = [500, 10] // 顶点
 
         this.a = getParabolaBaseA(0, 600, 500, 10)
@@ -58,7 +57,7 @@ class Weather {
         this.duration = 30 * 1000 // s
         // 1s,33
 
-        this.weatherChangeSpeed = 0.1
+        this.weatherChangeSpeed = 0.2
 
         this.$ = pen
         this.cvs = cvs
@@ -74,7 +73,7 @@ class Weather {
             color = 255 - Math.floor(Math.abs(s) * 127.5)
             this.$.fillStyle = `rgba(${color}, ${color}, ${color}, 1)`;
             this.$.fillRect(0, 0, this.cvs.width, this.cvs.height);
-            this.$.drawImage(sun, this.currentX - 35, this.currentY - 15, 70, 70);
+            this.$.drawImage(sun, this.currentX - 30, this.currentY - 15, 60, 60);
         } else {
             if (!this.startList.length) {
                 for (let i = 0; i < getRandomInt(10, 30); i++) {

@@ -1,11 +1,14 @@
 import Map from './map.js'
 import Render from './render.js'
+import MySocket from './net/net.js'
 import { singletonGenerate } from './utils.js'
 
 const GMap = singletonGenerate(Map)
 const GRender = singletonGenerate(Render)
+const GSocket = singletonGenerate(MySocket)
 
 let RenderInstace = null
+let GSocketInstace = null
 
 const instances = {
     Map: null,
@@ -13,6 +16,10 @@ const instances = {
 
 function initMap(w, h, canvas) {
     instances.Map = new GMap(w, h, canvas)
+}
+
+function initSocket() {
+    GSocketInstace = new GSocket()
 }
 
 function initRender(fps = 30) {
@@ -33,6 +40,8 @@ export function init(cvs, pen, w, h, fps) {
     canvas.cvs.height = h
     canvas.cvs.style = `position: absolute;top: 50%;left: 50%;transform: translate(-50%,-50%);background-color:rgba(230,230,230,0)`
     document.body.insertBefore(canvas.cvs, null)
+
+    initSocket()
 
     initMap(w, h, canvas)
 
