@@ -1,17 +1,116 @@
-import { getRandomInt, arrChunk, getRandomFloat } from '../scripts/utils.js'
+import { getRandomInt, arrChunk, getRandomFloat, singletonGenerate, getRandColorRange } from '../scripts/utils.js'
 
 function clearFileName(params = '') {
     return params.split('/').pop()
 }
 
+function getParabolaBaseA(x, y, vX, vY) {
+    // y= a*(x-vX)^2-vY
+    return (y - vY) / Math.pow(x - vX, 2)
+}
 
-class Block {
+class Start {
+    constructor(pen) {
+        this.$ = pen
+        this.x = getRandomInt(0, 1000)
+        this.y = getRandomInt(0, 200)
+        this.size = getRandomFloat(2, 4)
+        this.speed = getRandomFloat(0.1, 0.5)
+        this.color = getRandColorRange(200, 255)
+        this.dodge = "3700ff"
+    }
+
+    move() {
+        if (this.x <= 0) {
+            this.x = getRandomInt(0, 1000)
+            this.y = getRandomInt(0, 200)
+            this.size = getRandomFloat(2, 4)
+            this.speed = getRandomFloat(0.1, 1)
+            this.color = getRandColorRange(230, 255)
+        }
+        this.x -= this.speed
+
+        this.draw()
+    }
+
+    draw() {
+        this.$.beginPath()
+        this.$.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+        getRandomInt(0, 5) === 0 ? this.$.fillStyle = this.dodge.cS : this.$.fillStyle = this.color.cS
+        this.$.fill()
+        this.$.closePath()
+    }
+}
+
+class Weather {
+    // 根据抛物线顶点公式 y = a(x - h)^2 + k
+    // 已知y:-600,x:0,(h,k)顶点坐标为（500，-10）得到-600 = a(0 - 500)^2 - 10
+    // 求得a：-0.0024 因为canvas坐标系跟正常坐标系的区别取0.0024
+    constructor(cvs, pen) {
+        this.type = false // sun or moon
+        this.vertex = [500, 10] // 顶点
+
+        this.a = getParabolaBaseA(0, 600, 500, 10)
+
+        this.currentX = 1000
+        this.currentY = -600
+
+        this.duration = 30 * 1000 // s
+        // 1s,33
+
+        this.weatherChangeSpeed = 0.1
+
+        this.$ = pen
+        this.cvs = cvs
+
+        this.startList = []
+    }
+
+    run(sun, moon) {
+        const currentSchedule = this.currentX / 1000
+        const s = (currentSchedule - 0.5) * 2
+        if (this.type) {
+            let color = 0
+            color = 255 - Math.floor(Math.abs(s) * 127.5)
+            this.$.fillStyle = `rgba(${color}, ${color}, ${color}, 1)`;
+            this.$.fillRect(0, 0, this.cvs.width, this.cvs.height);
+            this.$.drawImage(sun, this.currentX - 35, this.currentY - 15, 70, 70);
+        } else {
+            if (!this.startList.length) {
+                for (let i = 0; i < getRandomInt(10, 30); i++) {
+                    this.startList.push(new Start(this.$))
+                }
+            }
+
+            let color = 0
+            color = Math.floor(Math.abs(s) * 127.5)
+            this.$.fillStyle = `rgba(${color}, ${color}, ${color}, 1)`;
+            this.$.fillRect(0, 0, this.cvs.width, this.cvs.height);
+
+            for (let i = 0, len = this.startList.length; i < len; i++) {
+                this.startList[i].move()
+            }
+
+            this.$.drawImage(moon, this.currentX - 30, this.currentY - 15, 60, 60);
+        }
+
+        if (this.currentX > 0) {
+            // y = a(x - h)^2 + k
+            // y = 0.0024(1000-500)^2+0
+            // y = 600
+            this.currentX -= this.weatherChangeSpeed
+            this.currentY = this.a * Math.pow((this.currentX - this.vertex[0]), 2) + this.vertex[1]
+        } else {
+            this.type = !this.type
+            this.currentX = 1000
+        }
+
+        // console.log();
+    }
 
 }
 
-// const floor={
-
-// }
+const GWeather = singletonGenerate(Weather)
 
 class Map {
     constructor(w, h, canvas) {
@@ -19,6 +118,7 @@ class Map {
         this.h = h // 600
 
         this.$ = canvas.pen
+        this.cvs = canvas.cvs
 
         this.blockW = 20
 
@@ -37,6 +137,8 @@ class Map {
         this.generateFloor()
 
         this.gennerateCloud()
+
+        this.weather = new GWeather(this.cvs, this.$)
     }
 
     generateFloor() {
@@ -111,7 +213,6 @@ class Map {
         }
     }
 
-
     stickCloud() {
         for (const cloudPoint of this.cloudBlock) {
             this.$.drawImage(cloudPoint.img, cloudPoint.x, cloudPoint.y, cloudPoint.img.width / cloudPoint.scale, cloudPoint.img.height / cloudPoint.scale);
@@ -120,10 +221,10 @@ class Map {
 
     stickFloor() {
         for (const floorPoint of this.floorBlock) {
-            this.$.drawImage(floorPoint.img, floorPoint.x, floorPoint.y, floorPoint.img.width / 3, floorPoint.img.height / (floorPoint.type === 1 ? 3 : 2.5));
+            // this.$.drawImage(floorPoint.img, floorPoint.x, floorPoint.y, floorPoint.img.width / 3, floorPoint.img.height / (floorPoint.type === 1 ? 3 : 2.5));
+            this.$.drawImage(floorPoint.img, floorPoint.x, floorPoint.y, 20, 20);
         }
     }
-
 
     async loadAssets() {
         const imgs = await this.loadImg()
@@ -135,7 +236,7 @@ class Map {
     loadImg() {
         const loadTask = []
 
-        for (const url of ["./resource/GrassNGrass.png", "./resource/Grass.png", "./resource/Sky2.png", "./resource/Sky.png"]) {
+        for (const url of ["./resource/GrassNGrass.png", "./resource/Grass.png", "./resource/Sky2.png", "./resource/Sky.png", "./resource/sun.png", "./resource/moon.png"]) {
             loadTask.push(
                 new Promise(res => {
                     const img = new Image();
@@ -154,10 +255,13 @@ class Map {
     }
 
     draw() {
+        this.weather && this.weather.run(this.imgs['sun.png'], this.imgs['moon.png'])
+
         this.stickFloor()
 
         this.floatCloud()
         this.stickCloud()
+
     }
 }
 
