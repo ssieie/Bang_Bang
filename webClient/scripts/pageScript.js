@@ -1,6 +1,9 @@
-
+import MySocket from './net/socket.js'
 import fetchJson from './net/http.js'
-import { getRandomNumber } from './utils.js'
+import { getRandomNumber, singletonGenerate } from './utils.js'
+
+let GSocketInstace = null
+const GSocket = singletonGenerate(MySocket)
 
 const waitFun = (time) => {
     return new Promise(res => {
@@ -21,6 +24,7 @@ const newAddRoomConfirm = document.getElementById('newAddRoomConfirm')
 gameIndexPage.children[0].addEventListener('click', removeIndexPage)
 
 async function removeIndexPage() {
+    window.localStorage.clear()
     gameIndexPage.children[0].classList.add('start-closed')
 
     await waitFun(600)
@@ -54,7 +58,7 @@ function getRoomList() {
                 const roomState = document.createElement('div')
                 roomState.className = 'status'
                 // todo 添加人数标识
-                roomState.innerText = 1
+                roomState.innerText = it.player.length
                 roomItem.appendChild(roomState)
 
                 const roomIcon = document.createElement('div')
@@ -82,11 +86,13 @@ function getRoomList() {
 removeIndexPage()
 
 refresh.addEventListener('click', () => {
+    GSocketInstace = new GSocket()
     getRoomList()
 })
 
 roomWrap.addEventListener('click', (e) => {
     if (e.target.parentElement.className === 'room-item') {
+        GSocketInstace && GSocketInstace.sendMsg("ASD")
         console.log(e.target.parentElement.dataset.id);
     }
 }, false)
@@ -127,6 +133,7 @@ newAddRoomConfirm.addEventListener('click', () => {
         console.log(data);
         isConfirm = false
         if (data.status === 0) {
+            window.localStorage.setItem('userId', data.data)
             // success
             getRoomList()
             roomNameInputer.value = ''

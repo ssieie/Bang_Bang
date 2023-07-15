@@ -40,12 +40,6 @@ fn res_message_handler(state: ResCode) -> String {
     }
 }
 
-pub async fn shutdown_signal() {
-    // Wait for the CTRL+C signal
-    tokio::signal::ctrl_c()
-        .await
-        .expect("failed to install CTRL+C signal handler");
-}
 
 pub async fn http_handler(req: Request<Body>) -> Result<Response<Body>, Infallible> {
     let mut response = Response::new(Body::empty());
@@ -88,11 +82,17 @@ struct Room {
     name: String,
     size: u16,
     uuid: String,
+    player: Vec<String>,
 }
 
 impl Room {
     fn new(name: String, size: u16, uuid: String) -> Self {
-        Self { name, size, uuid }
+        Self {
+            name,
+            size,
+            uuid,
+            player: Vec::with_capacity(2),
+        }
     }
 }
 
@@ -122,6 +122,8 @@ async fn add_room(req: Request<Body>) -> Result<String, Box<dyn Error>> {
 
     let uuid = Uuid::new_v4().to_string();
 
+    let user_id = Uuid::new_v4().to_string();
+
     let mut room_list: Vec<Room> = Vec::new();
 
     if let Some(val) = redis::get("room_list") {
@@ -140,13 +142,21 @@ async fn add_room(req: Request<Body>) -> Result<String, Box<dyn Error>> {
             }
         }
 
-        room_list.push(Room::new(name.clone(), size, uuid))
+        let mut room: Room = Room::new(name.clone(), size, uuid);
+        room.player.push(user_id.clone());
+        room_list.push(room);
     } else {
-        room_list.push(Room::new(name.clone(), size, uuid))
+        let mut room: Room = Room::new(name.clone(), size, uuid);
+        room.player.push(user_id.clone());
+        room_list.push(room);
     }
     redis::set("room_list", serde_json::to_string(&room_list).unwrap());
 
-    Ok(res_message_handler(ResCode::Ok))
+    let res_data = ResData {
+        status: 0,
+        data: user_id,
+    };
+    Ok(serde_json::to_string(&res_data).unwrap())
 }
 
 async fn get_rooms(_req: Request<Body>) -> Result<String, Box<dyn Error>> {
