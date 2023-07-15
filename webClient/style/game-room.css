@@ -1,0 +1,79 @@
+.game-room {
+    width: 100%;
+    height: 100vh;
+    position: absolute;
+    opacity: 0;
+}
+
+.game-room-show {
+    -webkit-animation: scale-up-center 0.4s cubic-bezier(0.390, 0.575, 0.565, 1.000) both;
+    animation: scale-up-center 0.4s cubic-bezier(0.390, 0.575, 0.565, 1.000) both;
+    opacity: 1;
+}
+
+.game-room .title {
+    margin: 20px auto 30px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    position: relative;
+}
+
+.game-room .title .add-room {
+    position: absolute;
+    right: 20px;
+    top: 0;
+    font-weight: normal;
+    font-size: 14px;
+    letter-spacing: 1px;
+    background-color: #9681EB;
+    color: #fff;
+    padding: 5px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#refresh{
+    right: 110px;
+}
+
+.game-room .room-wrap {
+    padding: 0 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+
+.game-room .room-wrap .room-item {
+    width: 100px;
+    height: 100px;
+    cursor: pointer;
+    /* background-color: aliceblue; */
+    position: relative;
+
+    
+    transition: all .3s;
+}
+
+.game-room .room-wrap .room-item:hover {
+    transform: scale(1.1);
+}
+
+.game-room .room-wrap .room-item .status{
+    position: absolute;
+    right: 0;
+}
+
+.game-room .room-wrap .room-item .name{
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.game-room .room-wrap .room-item .icon{
+    width: 80%;
+    height: 80%;
+    margin: 0 auto;
+}

@@ -1,6 +1,6 @@
 import Map from './map.js'
 import Render from './render.js'
-import MySocket from './net/net.js'
+import MySocket from './net/socket.js'
 import { singletonGenerate } from './utils.js'
 
 const GMap = singletonGenerate(Map)

@@ -1,0 +1,42 @@
+.game-index {
+    width: 100%;
+    height: 100vh;
+    position: absolute;
+    background-color: #45CFDD;
+    z-index: 1;
+    overflow: hidden;
+}
+
+.game-index-closed {
+    -webkit-animation: slide-bck-tr 0.45s cubic-bezier(0.470, 0.000, 0.745, 0.715) both;
+    animation: slide-bck-tr 0.45s cubic-bezier(0.470, 0.000, 0.745, 0.715) both;
+}
+
+.game-index .start {
+    position: absolute;
+    top: 50%;
+    left: calc(50% - 112px);
+
+    background-color: #6527BE;
+    color: #A7EDE7;
+    padding: 30px 80px;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: all .3s;
+
+    -webkit-animation: scale-up-center 0.4s cubic-bezier(0.390, 0.575, 0.565, 1.000) both;
+    animation: scale-up-center 0.4s cubic-bezier(0.390, 0.575, 0.565, 1.000) both;
+
+}
+
+.game-index .start-closed {
+    -webkit-animation: rotate-center 0.6s ease-in-out both !important;
+    animation: rotate-center 0.6s ease-in-out both !important;
+}
+
+.game-index .start:hover {
+    background-color: #9681EB;
+
+    -webkit-animation: scale-down-center 0.6s ease-in-out both;
+    animation: scale-down-center 0.6s ease-in-out both;
+}

@@ -1,0 +1,64 @@
+#newGameRoomDialog {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    /* height: 220px; */
+    border: 1px solid #A7EDE7;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#newGameRoomDialog .title {
+    padding: 10px 0 10px 0;
+    margin-bottom: 20px;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    background-color: #6527BE;
+    color: #A7EDE7;
+}
+
+#newGameRoomDialog .form {
+    padding: 0 30px;
+}
+
+#newGameRoomDialog .btns {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 20px;
+    font-size: 14px;
+    padding: 20px;
+}
+
+#newGameRoomDialog .btns .confirm {
+    background-color: #9681EB;
+    padding: 5px 10px;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    transition: all .3s;
+}
+
+#newGameRoomDialog .btns .confirm:hover {
+    background-color: #6527BE;
+}
+
+#newGameRoomDialog .btns .cancel {
+    background-color: #A7EDE7;
+    padding: 5px 10px;
+    border-radius: 4px;
+    color: #6527BE;
+    cursor: pointer;
+    transition: all .3s;
+}
+
+#newGameRoomDialog .btns .cancel:hover {
+    background-color: #a7bfed;
+    color: #8a54ee;
+}
+
+#newGameRoomDialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.336);
+}
