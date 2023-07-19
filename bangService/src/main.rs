@@ -10,7 +10,6 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use tokio::net::TcpListener;
 use tokio_tungstenite::tungstenite::protocol::Message;
-
 type Tx = UnboundedSender<Message>;
 type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
 
@@ -27,11 +26,11 @@ async fn main() {
     let server = Server::bind(&addr).serve(make_svc);
 
     // let graceful = server.with_graceful_shutdown(shutdown_signal());
-    println!("Http server running on ws://{}", addr);
+    println!("Http server running on http://{}", addr);
 
     // 创建 WebSocket 服务器
     let ws_addr: SocketAddr = SocketAddr::from(([0, 0, 0, 0], 8881));
-    
+
     let state = PeerMap::new(Mutex::new(HashMap::new()));
 
     let ws_listener: TcpListener = TcpListener::bind(&ws_addr)
