@@ -1,5 +1,6 @@
 use futures_channel::mpsc::{unbounded, UnboundedSender};
 use futures_util::{future, pin_mut, stream::TryStreamExt, StreamExt};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -11,7 +12,23 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 type Tx = UnboundedSender<Message>;
 type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
 
-pub async fn socket_handler(peer_map: PeerMap, stream: TcpStream, addr: SocketAddr) {
+pub struct RoomUser {
+    uid: String,
+    rid: String,
+}
+type RoomUserMap = Arc<Mutex<HashMap<SocketAddr, RoomUser>>>;
+
+#[derive(Serialize, Deserialize)]
+struct MessageBody {
+    m_type: String,
+}
+
+pub async fn socket_handler(
+    peer_map: PeerMap,
+    room_user: RoomUserMap,
+    stream: TcpStream,
+    addr: SocketAddr,
+) {
     println!("来自: {} TCP连接", addr);
 
     let ws_stream = accept_async(stream)

@@ -1,9 +1,8 @@
 import MySocket from './net/socket.js'
 import fetchJson from './net/http.js'
-import { getRandomNumber, singletonGenerate } from './utils.js'
-
-let GSocketInstace = null
-const GSocket = singletonGenerate(MySocket)
+import { getRandomNumber } from './utils.js'
+import SocketEvents from './utils/socketEvents.js'
+import { showLoading, hideLoadinng } from './utils/pageLoading.js'
 
 const waitFun = (time) => {
     return new Promise(res => {
@@ -43,6 +42,7 @@ async function removeIndexPage() {
 
 const roomWrap = document.getElementById('roomWrap')
 function getRoomList() {
+    showLoading()
     const roomIds = Array.from(document.querySelectorAll('.room-item')).map(v => v.dataset.id)
 
     fetchJson('/getRooms').then(data => {
@@ -80,20 +80,34 @@ function getRoomList() {
         }
     }).catch(err => {
         console.log(err);
+    }).finally(() => {
+        hideLoadinng()
     })
 }
 
 removeIndexPage()
 
 refresh.addEventListener('click', () => {
-    GSocketInstace = new GSocket()
     getRoomList()
 })
 
+let isJoinRoom = false
+let isJoinRoomLoading = false
+SocketEvents.subscribe('join', (msg) => {
+    console.log(msg);
+    hideLoadinng()
+    isJoinRoom = true
+    isJoinRoomLoading = false
+})
+
 roomWrap.addEventListener('click', (e) => {
-    if (e.target.parentElement.className === 'room-item') {
-        GSocketInstace && GSocketInstace.sendMsg("ASD")
-        console.log(e.target.parentElement.dataset.id);
+    if (e.target.parentElement.className === 'room-item' && !isJoinRoomLoading) {
+        showLoading()
+        isJoinRoomLoading = true
+        MySocket.sendMsg(JSON.stringify({
+            type: 'join',
+            roomId: e.target.parentElement.dataset.id
+        }))
     }
 }, false)
 
@@ -119,7 +133,7 @@ mapSizeChanger.addEventListener('input', (e) => {
 
 let isConfirm = false
 newAddRoomConfirm.addEventListener('click', () => {
-    if (isConfirm) return
+    if (isConfirm || isJoinRoomLoading) return
     if (!roomNameInputer.value) {
         alert('非法名称')
         return
@@ -133,7 +147,12 @@ newAddRoomConfirm.addEventListener('click', () => {
         console.log(data);
         isConfirm = false
         if (data.status === 0) {
-            window.localStorage.setItem('userId', data.data)
+            // data.data房间ID，根据房间ID加入房间
+            isJoinRoomLoading = true
+            MySocket.sendMsg(JSON.stringify({
+                type: 'join',
+                roomId: data.data
+            }))
             // success
             getRoomList()
             roomNameInputer.value = ''

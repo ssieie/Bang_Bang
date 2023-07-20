@@ -1,5 +1,6 @@
 // use futures::TryStreamExt as _;
 // use super::super::store::redis;
+use crate::MY_REDIS;
 use hyper::{
     header::{HeaderValue, ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_TYPE},
     Body, Method, Request, Response, StatusCode,
@@ -7,7 +8,6 @@ use hyper::{
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, convert::Infallible, error::Error};
 use uuid::Uuid;
-use crate::MY_REDIS;
 
 enum ResCode {
     Ok,
@@ -120,9 +120,7 @@ async fn add_room(req: Request<Body>) -> Result<String, Box<dyn Error>> {
     let name = body_obj.get("name").unwrap();
     let size = body_obj.get("size").unwrap().parse::<u16>().unwrap();
 
-    let uuid = Uuid::new_v4().to_string();
-
-    let user_id = Uuid::new_v4().to_string();
+    let room_uuid = Uuid::new_v4().to_string();
 
     let mut room_list: Vec<Room> = Vec::new();
 
@@ -144,19 +142,17 @@ async fn add_room(req: Request<Body>) -> Result<String, Box<dyn Error>> {
             }
         }
 
-        let mut room: Room = Room::new(name.clone(), size, uuid);
-        room.player.push(user_id.clone());
+        let room: Room = Room::new(name.clone(), size, room_uuid.clone());
         room_list.push(room);
     } else {
-        let mut room: Room = Room::new(name.clone(), size, uuid);
-        room.player.push(user_id.clone());
+        let room: Room = Room::new(name.clone(), size, room_uuid.clone());
         room_list.push(room);
     }
     my_redis.set("room_list", serde_json::to_string(&room_list).unwrap());
 
     let res_data = ResData {
         status: 0,
-        data: user_id,
+        data: room_uuid,
     };
     Ok(serde_json::to_string(&res_data).unwrap())
 }

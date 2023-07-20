@@ -1,3 +1,4 @@
+import SocketEvents from '../utils/socketEvents.js'
 
 class MySocket {
 
@@ -20,6 +21,7 @@ class MySocket {
 
     onmessage(event) {
         console.log("Received message: " + event.data);
+        SocketEvents.publish('a', 'b')
     }
 
     sendMsg(msg) {
@@ -27,4 +29,4 @@ class MySocket {
     }
 }
 
-export default MySocket
+export default new MySocket()

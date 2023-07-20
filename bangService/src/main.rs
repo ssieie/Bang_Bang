@@ -10,8 +10,15 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use tokio::net::TcpListener;
 use tokio_tungstenite::tungstenite::protocol::Message;
+
 type Tx = UnboundedSender<Message>;
 type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
+
+pub struct RoomUser {
+    uid: String,
+    rid: String,
+}
+type RoomUserMap = Arc<Mutex<HashMap<SocketAddr, RoomUser>>>;
 
 #[tokio::main]
 async fn main() {
@@ -31,7 +38,10 @@ async fn main() {
     // 创建 WebSocket 服务器
     let ws_addr: SocketAddr = SocketAddr::from(([0, 0, 0, 0], 8881));
 
+    // 存放已连接socket的客户端的地址
     let state = PeerMap::new(Mutex::new(HashMap::new()));
+    let room_user: Arc<Mutex<HashMap<SocketAddr, RoomUser>>> =
+        RoomUserMap::new(Mutex::new(HashMap::new()));
 
     let ws_listener: TcpListener = TcpListener::bind(&ws_addr)
         .await
@@ -41,7 +51,12 @@ async fn main() {
 
     tokio::spawn(async move {
         while let Ok((stream, addr)) = ws_listener.accept().await {
-            tokio::spawn(socket_handler(state.clone(), stream, addr));
+            tokio::spawn(socket_handler(
+                state.clone(),
+                room_user.clone(),
+                stream,
+                addr,
+            ));
         }
     });
 

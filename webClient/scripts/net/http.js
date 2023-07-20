@@ -3,7 +3,9 @@ const baseUrl = "http://127.0.0.1:8880"
 
 async function fetchJson(url, options = {}) {
 
-    const response = await fetch(`${baseUrl}${url}`, options);
+    const response = await fetch(`${baseUrl}${url}`, options).catch(() => {
+        alert('网络连接错误')
+    });
 
     const data = await response.json();
 
