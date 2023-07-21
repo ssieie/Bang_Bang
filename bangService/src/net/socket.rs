@@ -12,11 +12,8 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 type Tx = UnboundedSender<Message>;
 type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
 
-pub struct RoomUser {
-    uid: String,
-    rid: String,
-}
-type RoomUserMap = Arc<Mutex<HashMap<SocketAddr, RoomUser>>>;
+
+type RoomUserMap = Arc<Mutex<HashMap<SocketAddr, crate::RoomUser>>>;
 
 #[derive(Serialize, Deserialize)]
 struct MessageBody {

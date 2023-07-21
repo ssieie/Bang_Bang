@@ -3,6 +3,11 @@ use std::sync::Mutex;
 pub mod net;
 pub mod store;
 
+pub struct RoomUser {
+    uid: String,
+    rid: String,
+}
+
 #[macro_use]
 extern crate lazy_static;
 lazy_static! {

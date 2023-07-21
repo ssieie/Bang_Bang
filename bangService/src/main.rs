@@ -14,11 +14,7 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 type Tx = UnboundedSender<Message>;
 type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
 
-pub struct RoomUser {
-    uid: String,
-    rid: String,
-}
-type RoomUserMap = Arc<Mutex<HashMap<SocketAddr, RoomUser>>>;
+type RoomUserMap = Arc<Mutex<HashMap<SocketAddr, bang_service::RoomUser>>>;
 
 #[tokio::main]
 async fn main() {
@@ -40,8 +36,7 @@ async fn main() {
 
     // 存放已连接socket的客户端的地址
     let state = PeerMap::new(Mutex::new(HashMap::new()));
-    let room_user: Arc<Mutex<HashMap<SocketAddr, RoomUser>>> =
-        RoomUserMap::new(Mutex::new(HashMap::new()));
+    let room_user: Arc<Mutex<HashMap<SocketAddr, bang_service::RoomUser>>> = RoomUserMap::new(Mutex::new(HashMap::new()));
 
     let ws_listener: TcpListener = TcpListener::bind(&ws_addr)
         .await
