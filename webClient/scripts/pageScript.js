@@ -43,13 +43,29 @@ async function removeIndexPage() {
 const roomWrap = document.getElementById('roomWrap')
 function getRoomList() {
     showLoading()
-    const roomIds = Array.from(document.querySelectorAll('.room-item')).map(v => v.dataset.id)
+    // const roomIds = Array.from(document.querySelectorAll('.room-item')).map(v => v.dataset.id)
 
     fetchJson('/getRooms').then(data => {
         if (data.status === 0) {
+            roomWrap.innerHTML = ''
+
+            // if (roomIds.length !== data.data) {
+            //     let diff
+            //     if (roomIds.length > data.data) {
+            //         diff = roomIds.filter(item => !data.data.includes(item));
+            //     } else {
+            //         diff = data.data.filter(item => !roomIds.includes(item));
+            //     }
+            //     for (const dom of document.querySelectorAll('.room-item')) {
+            //         if (diff.includes(dom.dataset.id)) {
+            //             dom.remove()
+            //         }
+            //     }
+            // }
+
             for (const it of data.data) {
 
-                if (roomIds.includes(it.uuid)) continue
+                // if (roomIds.includes(it.uuid)) continue
 
                 const roomItem = document.createElement('div')
                 roomItem.className = 'room-item'
@@ -99,14 +115,23 @@ SocketEvents.subscribe('join', (msg) => {
     isJoinRoom = true
     isJoinRoomLoading = false
 })
+SocketEvents.subscribe('join_err', (msg) => {
+    hideLoadinng()
+    alert(msg)
+    isJoinRoom = false
+    isJoinRoomLoading = false
+})
+SocketEvents.subscribe('joined', (msg) => {
+    console.log(msg, 'joined');
+})
 
 roomWrap.addEventListener('click', (e) => {
     if (e.target.parentElement.className === 'room-item' && !isJoinRoomLoading) {
         showLoading()
         isJoinRoomLoading = true
         MySocket.sendMsg(JSON.stringify({
-            type: 'join',
-            roomId: e.target.parentElement.dataset.id
+            m_type: 'join',
+            data: e.target.parentElement.dataset.id
         }))
     }
 }, false)
@@ -150,8 +175,8 @@ newAddRoomConfirm.addEventListener('click', () => {
             // data.data房间ID，根据房间ID加入房间
             isJoinRoomLoading = true
             MySocket.sendMsg(JSON.stringify({
-                type: 'join',
-                roomId: data.data
+                m_type: 'join',
+                data: data.data
             }))
             // success
             getRoomList()

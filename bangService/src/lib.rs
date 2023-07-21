@@ -4,8 +4,14 @@ pub mod net;
 pub mod store;
 
 pub struct RoomUser {
-    uid: String,
-    rid: String,
+    u_id: String,
+    r_id: String,
+}
+
+impl RoomUser {
+    pub fn new(u_id: String, r_id: String) -> Self {
+        Self { u_id, r_id }
+    }
 }
 
 #[macro_use]

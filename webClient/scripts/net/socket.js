@@ -20,8 +20,8 @@ class MySocket {
     }
 
     onmessage(event) {
-        console.log("Received message: " + event.data);
-        SocketEvents.publish('a', 'b')
+        let data = JSON.parse(event.data)
+        SocketEvents.publish(data.m_type, data.data)
     }
 
     sendMsg(msg) {

@@ -4,8 +4,9 @@ class SocketEvents {
     }
 
     /**
-     * join 加入房间,
-     * 2 ..
+     * join 加入房间(自己),
+     * joined 加入房间(别人)
+     * join_err 加入房间错误
      */
 
     subscribe(evtName, fn) {
