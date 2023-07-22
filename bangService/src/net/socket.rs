@@ -62,7 +62,7 @@ pub async fn socket_handler(
 
     let (tx, rx) = unbounded();
 
-    peer_map.lock().unwrap().insert(addr, tx);
+    peer_map.lock().unwrap().insert(addr, tx.clone());
 
     let (outgoing, incoming) = ws_stream.split();
 
@@ -72,22 +72,22 @@ pub async fn socket_handler(
         let msg_body: MessageBody<String> =
             serde_json::from_str(&msg.to_text().unwrap()).unwrap_or(MessageBody::empty());
 
+        // 获取房间用户锁
+        let mut room_user_guard: std::sync::MutexGuard<'_, HashMap<SocketAddr, RoomUser>> =
+            room_user.lock().unwrap();
+
         // 待发消息的客户端
         let mut m_q: MessageQueue = vec![];
         match msg_body.m_type.as_str() {
             "join" => {
-                match room_user.lock().unwrap().get(&addr) {
-                    Some(_) => {
-                        if let Some(tx) = peer_map.lock().unwrap().get(&addr) {
-                            m_q.push(MQTyper {
-                                tx: tx.clone(),
-                                send: MessageBody {
-                                    m_type: String::from("join_err"),
-                                    data: String::from("错误的消息,当前userID已在别房间!"),
-                                },
-                            })
-                        }
-                    }
+                match room_user_guard.get(&addr) {
+                    Some(_) => m_q.push(MQTyper {
+                        tx: tx.clone(),
+                        send: MessageBody {
+                            m_type: String::from("join_err"),
+                            data: String::from("错误的消息,当前userID已在别的房间!"),
+                        },
+                    }),
                     None => {
                         // 加入房间，发放uuid,加入room_user
                         let user_uuid = Uuid::new_v4().to_string();
@@ -105,7 +105,10 @@ pub async fn socket_handler(
                                                 match room.player.get(0) {
                                                     Some(u) => {
                                                         if let Some(socket_addr) =
-                                                            find_socket_addr_by_u_id(&room_user, u)
+                                                            find_socket_addr_by_u_id(
+                                                                &room_user_guard,
+                                                                u,
+                                                            )
                                                         {
                                                             if let Some(tx) = peer_map
                                                                 .lock()
@@ -127,9 +130,10 @@ pub async fn socket_handler(
                                                     None => {}
                                                 }
                                             }
+
                                             room.player.push(user_uuid.clone());
 
-                                            room_user.lock().unwrap().insert(
+                                            room_user_guard.insert(
                                                 addr,
                                                 RoomUser::new(
                                                     user_uuid.clone(),
@@ -137,15 +141,23 @@ pub async fn socket_handler(
                                                 ),
                                             );
 
-                                            if let Some(tx) = peer_map.lock().unwrap().get(&addr) {
-                                                m_q.push(MQTyper {
-                                                    tx: tx.clone(),
-                                                    send: MessageBody {
-                                                        m_type: String::from("join"),
-                                                        data: user_uuid.clone(),
-                                                    },
-                                                })
-                                            }
+                                            let m_data = (
+                                                user_uuid.clone(),
+                                                Room {
+                                                    name: room.name.clone(),
+                                                    size: room.size,
+                                                    uuid: room.uuid.clone(),
+                                                    player: room.player.clone(),
+                                                },
+                                            );
+
+                                            m_q.push(MQTyper {
+                                                tx: tx.clone(),
+                                                send: MessageBody {
+                                                    m_type: String::from("join"),
+                                                    data: serde_json::to_string(&m_data).unwrap(),
+                                                },
+                                            });
 
                                             my_redis.set(
                                                 "room_list",
@@ -153,21 +165,86 @@ pub async fn socket_handler(
                                             );
                                             break;
                                         } else {
-                                            if let Some(tx) = peer_map.lock().unwrap().get(&addr) {
-                                                m_q.push(MQTyper {
-                                                    tx: tx.clone(),
-                                                    send: MessageBody {
-                                                        m_type: String::from("join_err"),
-                                                        data: String::from("房间人数已满!"),
-                                                    },
-                                                })
-                                            }
+                                            m_q.push(MQTyper {
+                                                tx: tx.clone(),
+                                                send: MessageBody {
+                                                    m_type: String::from("join_err"),
+                                                    data: String::from("房间人数已满!"),
+                                                },
+                                            });
                                         }
                                     }
                                 }
                             }
                         }
                     }
+                }
+            }
+            "exit" => {
+                let mut my_redis = MY_REDIS.lock().unwrap();
+                if let Some(val) = my_redis.get("room_list") {
+                    let mut room_list: Vec<Room> = serde_json::from_str(&val).unwrap();
+
+                    if room_list.len() > 0 {
+                        if let Some(user) = room_user_guard.get(&addr) {
+                            room_list.retain(|room| {
+                                if room.player.len() == 1 && room.uuid == user.r_id {
+                                    return false;
+                                }
+                                true
+                            });
+
+                            for it in &mut room_list {
+                                if it.uuid == user.r_id {
+                                    let mut is_exit = false;
+                                    it.player.retain(|x| {
+                                        if *x == user.u_id {
+                                            is_exit = true;
+                                            return false;
+                                        }
+                                        true
+                                    });
+                                    if it.player.len() == 1 && is_exit {
+                                        // 通知别的玩家退出
+                                        match it.player.get(0) {
+                                            Some(u) => {
+                                                if let Some(socket_addr) =
+                                                    find_socket_addr_by_u_id(&room_user_guard, u)
+                                                {
+                                                    if let Some(tx) =
+                                                        peer_map.lock().unwrap().get(&socket_addr)
+                                                    {
+                                                        m_q.push(MQTyper {
+                                                            tx: tx.clone(),
+                                                            send: MessageBody {
+                                                                m_type: String::from("exited"),
+                                                                data: String::from(u),
+                                                            },
+                                                        })
+                                                    }
+                                                }
+                                            }
+                                            None => {}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    my_redis.set("room_list", serde_json::to_string(&room_list).unwrap());
+                }
+            }
+            "test" => {
+                let peer_map_guard = peer_map.lock().unwrap();
+                for (_, tx) in peer_map_guard.iter() {
+                    m_q.push(MQTyper {
+                        tx: tx.clone(),
+                        send: MessageBody {
+                            m_type: String::from("test"),
+                            data: String::from("性能测试!"),
+                        },
+                    })
                 }
             }
             _ => {}
@@ -194,11 +271,13 @@ pub async fn socket_handler(
 
     // 断开连接，从房间中移除，并对redis数据进行处理
     let mut my_redis = MY_REDIS.lock().unwrap();
+    // 获取房间用户锁
+    let mut room_user_guard = room_user.lock().unwrap();
     if let Some(val) = my_redis.get("room_list") {
         let mut room_list: Vec<Room> = serde_json::from_str(&val).unwrap();
 
         if room_list.len() > 0 {
-            if let Some(user) = room_user.lock().unwrap().get(&addr) {
+            if let Some(user) = room_user_guard.get(&addr) {
                 room_list.retain(|room| {
                     if room.player.len() == 1 && room.uuid == user.r_id {
                         return false;
@@ -217,14 +296,17 @@ pub async fn socket_handler(
         my_redis.set("room_list", serde_json::to_string(&room_list).unwrap());
     }
 
-    room_user.lock().unwrap().remove(&addr);
+    room_user_guard.remove(&addr);
 }
 
-fn find_socket_addr_by_u_id(room_user_map: &RoomUserMap, u_id: &str) -> Option<SocketAddr> {
+fn find_socket_addr_by_u_id(
+    room_user_map: &std::sync::MutexGuard<'_, HashMap<SocketAddr, RoomUser>>,
+    u_id: &str,
+) -> Option<SocketAddr> {
     // 获取 RoomUserMap 的共享锁
-    let user_map = room_user_map.lock().unwrap();
+    // let user_map = room_user_map.lock().unwrap();
     // 使用 HashMap::iter() 方法遍历 RoomUserMap 中的键值对
-    for (socket_addr, room_user) in user_map.iter() {
+    for (socket_addr, room_user) in room_user_map.iter() {
         if room_user.u_id == u_id {
             // 找到匹配的 RoomUser，返回对应的 SocketAddr
             return Some(*socket_addr);

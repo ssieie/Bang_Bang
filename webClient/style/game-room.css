@@ -2,13 +2,22 @@
     width: 100%;
     height: 100vh;
     position: absolute;
+    z-index: -10;
     opacity: 0;
 }
 
 .game-room-show {
     -webkit-animation: scale-up-center 0.4s cubic-bezier(0.390, 0.575, 0.565, 1.000) both;
     animation: scale-up-center 0.4s cubic-bezier(0.390, 0.575, 0.565, 1.000) both;
+    z-index: 10;
     opacity: 1;
+}
+
+.game-room-hide {
+    -webkit-animation: scale-out-center 0.5s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
+    animation: scale-out-center 0.5s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
+    z-index: -10;
+    opacity: 0;
 }
 
 .game-room .title {
@@ -34,7 +43,7 @@
     cursor: pointer;
 }
 
-#refresh{
+#refresh {
     right: 110px;
 }
 
@@ -53,7 +62,7 @@
     /* background-color: aliceblue; */
     position: relative;
 
-    
+
     transition: all .3s;
 }
 
@@ -61,18 +70,19 @@
     transform: scale(1.1);
 }
 
-.game-room .room-wrap .room-item .status{
+.game-room .room-wrap .room-item .status {
     position: absolute;
     right: 0;
 }
 
-.game-room .room-wrap .room-item .name{
+.game-room .room-wrap .room-item .name {
     text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.game-room .room-wrap .room-item .icon{
+
+.game-room .room-wrap .room-item .icon {
     width: 80%;
     height: 80%;
     margin: 0 auto;

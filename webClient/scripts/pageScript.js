@@ -111,9 +111,12 @@ let isJoinRoom = false
 let isJoinRoomLoading = false
 SocketEvents.subscribe('join', (msg) => {
     console.log(msg);
+    // msg 为长度为2的数组0是userId，1是房间信息
+    window.sessionStorage.setItem('userId', msg[0])
     hideLoadinng()
     isJoinRoom = true
     isJoinRoomLoading = false
+    checkRoomPage(msg[1])
 })
 SocketEvents.subscribe('join_err', (msg) => {
     hideLoadinng()
@@ -135,6 +138,37 @@ roomWrap.addEventListener('click', (e) => {
         }))
     }
 }, false)
+
+const joinRoom = document.getElementById('joinRoom')
+const roomName = document.getElementById('roomName')
+const player1 = document.getElementById('player1')
+const player2 = document.getElementById('player2')
+const quitBtn = document.getElementById('quitBtn')
+async function checkRoomPage(roomInfo = {}) {
+    gameRoom.classList.remove('game-room-show')
+    gameRoom.classList.add('game-room-hide')
+    await waitFun(500)
+    joinRoom.classList.add('join-room-ac')
+    await waitFun(800)
+    roomName.innerText = '房间名称:' + '12312123'
+    roomName.classList.add('room-name-ac')
+
+}
+quitBtn.addEventListener('click', async () => {
+    gameRoom.classList.remove('game-room-hide')
+    joinRoom.classList.remove('join-room-ac')
+    roomName.classList.remove('room-name-ac')
+    joinRoom.classList.add('join-room-hide')
+    await waitFun(800)
+    roomName.innerText = ''
+    joinRoom.classList.remove('join-room-hide')
+    gameRoom.classList.add('game-room-show')
+
+    MySocket.sendMsg(JSON.stringify({
+        m_type: 'exit',
+        data: window.sessionStorage.getItem('userId')
+    }))
+})
 
 addRoom.addEventListener('click', () => {
     newGameRoomDialog.showModal()

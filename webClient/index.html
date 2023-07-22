@@ -1,73 +1,71 @@
 <!DOCTYPE html>
 <html lang="zh">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-  </head>
-  <link rel="stylesheet" type="text/css" href="./style/root.css" />
-  <link rel="stylesheet" type="text/css" href="./style/animation.css" />
-  <link rel="stylesheet" type="text/css" href="./style/game-index.css" />
-  <link rel="stylesheet" type="text/css" href="./style/game-room.css" />
-  <link
-    rel="stylesheet"
-    type="text/css"
-    href="./style/new-game-room-dialog.css"
-  />
-  <link rel="stylesheet" type="text/css" href="./style/loading.css" />
-  <script type="module" src="./scripts/main.js"></script>
-  <script type="module" src="./scripts/pageScript.js"></script>
 
-  <body>
-    <div class="game-index" id="gameIndexPage">
-      <div class="start">开始游戏</div>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
+<link href="https://fonts.font.im/css?family=Hanalei+Fill" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="./style/root.css" />
+<link rel="stylesheet" type="text/css" href="./style/animation.css" />
+<link rel="stylesheet" type="text/css" href="./style/game-index.css" />
+<link rel="stylesheet" type="text/css" href="./style/game-room.css" />
+<link rel="stylesheet" type="text/css" href="./style/join-room.css" />
+<link rel="stylesheet" type="text/css" href="./style/new-game-room-dialog.css" />
+<link rel="stylesheet" type="text/css" href="./style/loading.css" />
+<script type="module" src="./scripts/main.js"></script>
+<script type="module" src="./scripts/pageScript.js"></script>
+
+<body>
+  <div class="game-index" id="gameIndexPage">
+    <div class="start">开始游戏</div>
+  </div>
+  <div class="game-room" id="gameRoom">
+    <div class="title">
+      房间大厅
+      <div class="add-room" id="refresh">刷新</div>
+      <div class="add-room" id="addRoom">新建房间</div>
     </div>
-    <div class="game-room" id="gameRoom">
-      <div class="title">
-        房间大厅
-        <div class="add-room" id="refresh">刷新</div>
-        <div class="add-room" id="addRoom">新建房间</div>
+    <div class="room-wrap" id="roomWrap"></div>
+  </div>
+  <div class="loading" id="pageLoading">
+    <div class="rainbow"></div>
+  </div>
+  <div class="join-room" id="joinRoom">
+    <div class="quit-btn" id="quitBtn">退出</div>
+    <div class="room-name-warp">
+      <div class="room-name" id="roomName">
+      
       </div>
-      <div class="room-wrap" id="roomWrap"></div>
     </div>
-    <div class="loading" id="pageLoading">
-      <div class="rainbow"></div>
+    
+    <div class="player-warp">
+      <div>player1: <span id="player1"></span></div>
+      <div>player2: <span id="player2"></span></div>
     </div>
-    <div class="join-room" id="joinRoom"></div>
-    <dialog id="newGameRoomDialog">
-      <div class="title">新建房间</div>
-      <div class="form">
-        <form>
-          <div style="margin-bottom: 16px">
-            房间名称:
-            <input
-              type="text"
-              id="roomNameInputer"
-              name="roomName"
-              maxlength="20"
-              required
-            />
-          </div>
-          <div>
-            地图大小:
-            <input
-              type="range"
-              id="mapSizeChanger"
-              name="mapsize"
-              value="800"
-              min="600"
-              max="1800"
-              step="50"
-            />
-            <span id="mapSize">800</span>
-          </div>
-        </form>
-      </div>
-      <div class="btns">
-        <div class="confirm" id="newAddRoomConfirm">确定</div>
-        <div class="cancel" id="newAddRoomCancel">关闭</div>
-      </div>
-    </dialog>
-  </body>
+  </div>
+  <dialog id="newGameRoomDialog">
+    <div class="title">新建房间</div>
+    <div class="form">
+      <form>
+        <div style="margin-bottom: 16px">
+          房间名称:
+          <input type="text" id="roomNameInputer" name="roomName" maxlength="20" required />
+        </div>
+        <div>
+          地图大小:
+          <input type="range" id="mapSizeChanger" name="mapsize" value="800" min="600" max="1800" step="50" />
+          <span id="mapSize">800</span>
+        </div>
+      </form>
+    </div>
+    <div class="btns">
+      <div class="confirm" id="newAddRoomConfirm">确定</div>
+      <div class="cancel" id="newAddRoomCancel">关闭</div>
+    </div>
+  </dialog>
+</body>
+
 </html>

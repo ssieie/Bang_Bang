@@ -1,0 +1,93 @@
+.join-room {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    z-index: -11;
+    opacity: 0;
+}
+
+.join-room-ac {
+    -webkit-animation: slide-in-elliptic-top-fwd 0.7s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+    animation: slide-in-elliptic-top-fwd 0.7s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+    z-index: 11;
+    opacity: 1;
+    background-image: linear-gradient(to top, #fad0c4 0%, #ffd1ff 100%);
+}
+
+.join-room-hide {
+    z-index: -11;
+    opacity: 0;
+    -webkit-animation: slide-out-elliptic-top-bck 0.7s ease-in both;
+	        animation: slide-out-elliptic-top-bck 0.7s ease-in both;
+}
+
+.join-room .quit-btn {
+    position: absolute;
+    right: 20px;
+    top: 30px;
+    font-weight: normal;
+    font-size: 14px;
+    letter-spacing: 1px;
+    background-color: #9681EB;
+    color: #fff;
+    padding: 5px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.join-room .room-name {
+    margin: 30px 0;
+    height: 40px;
+    color: #fff;
+    font-size: 30px;
+    /* 字间距 */
+    letter-spacing: 5px;
+    /* 转大写 */
+    text-transform: uppercase;
+    text-align: center;
+    font-family: 'Hanalei Fill', cursive;
+    outline: none;
+    -webkit-box-reflect: below 0px linear-gradient(transparent, rgba(0, 0, 0, 0.2));
+    /* 自定义属性 --c,可通过 var 函数对其调用 */
+    --c: lightseagreen;
+    /* 调用自定义属性--c，设置文字阴影（发光效果） */
+    text-shadow: 0 0 10px var(--c),
+        0 0 20px var(--c),
+        0 0 40px var(--c),
+        0 0 80px var(--c),
+        0 0 160px var(--c);
+
+}
+
+.room-name-warp {
+    animation: animate 5s linear infinite;
+}
+
+@keyframes animate {
+    from {
+        filter: hue-rotate(0deg);
+    }
+
+    to {
+        /* 色相旋转过滤镜（设置度数可改变颜色） */
+        filter: hue-rotate(360deg);
+    }
+}
+
+.join-room .room-name-ac {
+    -webkit-animation: tracking-in-expand 0.7s cubic-bezier(0.215, 0.610, 0.355, 1.000) both;
+    animation: tracking-in-expand 0.7s cubic-bezier(0.215, 0.610, 0.355, 1.000) both;
+}
+
+.join-room .player-warp {
+    padding: 30px 50px;
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    font-size: 20px;
+    color: #333;
+    font-family: 'Hanalei Fill', cursive;
+}
