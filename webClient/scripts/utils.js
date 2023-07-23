@@ -117,3 +117,28 @@ export const uniqueKey = () => {
 export const getRandomNumber = (min, max) => {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+
+function clearFileName(params = '') {
+    return params.split('/').pop()
+}
+
+export const loadImg = (imgList = []) => {
+    const loadTask = []
+
+    for (const url of imgList) {
+        loadTask.push(
+            new Promise(res => {
+                const img = new Image();
+                img.src = url;
+                img.onload = function () {
+                    res({
+                        name: clearFileName(url),
+                        uri: img
+                    })
+                };
+            })
+        )
+    }
+
+    return Promise.all(loadTask)
+}

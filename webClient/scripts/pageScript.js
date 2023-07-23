@@ -38,6 +38,9 @@ async function removeIndexPage() {
     gameIndexPage.children[0].removeEventListener('click', removeIndexPage)
 
     getRoomList()
+
+    loadAudio()
+    checkRoomPage()
 }
 
 const roomWrap = document.getElementById('roomWrap')
@@ -89,7 +92,7 @@ function getRoomList() {
                 roomItem.appendChild(roomName)
 
                 roomWrap.appendChild(roomItem)
-                console.log(it);
+                // console.log(it);
             }
         } else {
             alert(data.data)
@@ -111,12 +114,12 @@ let isJoinRoom = false
 let isJoinRoomLoading = false
 SocketEvents.subscribe('join', (msg) => {
     console.log(msg);
-    // msg 为长度为2的数组0是userId，1是房间信息
+    // msg 为长度为3的数组0是userId, 1是房间信息, 2是玩家人数够了后返回的地图信息, 3是玩家人数够了后返回的玩家信息
     window.sessionStorage.setItem('userId', msg[0])
     hideLoadinng()
     isJoinRoom = true
     isJoinRoomLoading = false
-    checkRoomPage(msg[1])
+    checkRoomPage(msg[1], msg[2], msg[3])
 })
 SocketEvents.subscribe('join_err', (msg) => {
     hideLoadinng()
@@ -125,36 +128,92 @@ SocketEvents.subscribe('join_err', (msg) => {
     isJoinRoomLoading = false
 })
 SocketEvents.subscribe('joined', (msg) => {
+    if (isJoinRoom) {
+        if (player1.innerText === '') {
+            player1.innerText = msg
+        } else {
+            player2.innerText = msg
+        }
+        playerList.push(msg)
+    }
     console.log(msg, 'joined');
+})
+SocketEvents.subscribe('exited', (msg) => {
+    console.log(msg, 'exited');
+
+    const index = playerList.indexOf(msg);
+    if (index !== -1) {
+        playerList.splice(index, 1);
+    }
+
+    if (player1.innerText === msg) {
+        player1.innerText = ''
+    } else {
+        player2.innerText = ''
+    }
 })
 
 roomWrap.addEventListener('click', (e) => {
     if (e.target.parentElement.className === 'room-item' && !isJoinRoomLoading) {
         showLoading()
         isJoinRoomLoading = true
-        MySocket.sendMsg(JSON.stringify({
+        MySocket.sendMsg({
             m_type: 'join',
             data: e.target.parentElement.dataset.id
-        }))
+        })
     }
 }, false)
+
+const playerList = new Proxy([], {
+    get(target, prop, receiver) {
+        return Reflect.get(target, prop, receiver)
+    },
+    set(target, prop, value, receiver) {
+        const result = Reflect.set(target, prop, value, receiver);
+
+        if (prop !== 'length') {
+            console.log(`玩家 ${prop} 加入:`, target);
+        }
+        return result;
+    },
+    deleteProperty(target, prop) {
+        const result = Reflect.deleteProperty(target, prop);
+        console.log(`玩家 ${prop} 退出:`, target);
+        return result;
+    }
+})
 
 const joinRoom = document.getElementById('joinRoom')
 const roomName = document.getElementById('roomName')
 const player1 = document.getElementById('player1')
 const player2 = document.getElementById('player2')
 const quitBtn = document.getElementById('quitBtn')
-async function checkRoomPage(roomInfo = {}) {
+async function checkRoomPage(roomInfo = {}, mapInfo = null, playData = null) {
     gameRoom.classList.remove('game-room-show')
     gameRoom.classList.add('game-room-hide')
     await waitFun(500)
     joinRoom.classList.add('join-room-ac')
+
+    if (Array.isArray(roomInfo.player)) {
+        if (roomInfo.player.length === 1) {
+            player1.innerText = roomInfo.player[0]
+            playerList.push(roomInfo.player[0])
+        } else {
+            player1.innerText = roomInfo.player[0]
+            player2.innerText = roomInfo.player[1]
+            playerList.push(roomInfo.player[0])
+            playerList.push(roomInfo.player[1])
+        }
+    }
+
     await waitFun(800)
-    roomName.innerText = '房间名称:' + '12312123'
+    roomName.innerText = '房间名称:' + roomInfo.name
     roomName.classList.add('room-name-ac')
 
+    generateGameContent(roomInfo.size, mapInfo, playData)
 }
 quitBtn.addEventListener('click', async () => {
+    getRoomList()
     gameRoom.classList.remove('game-room-hide')
     joinRoom.classList.remove('join-room-ac')
     roomName.classList.remove('room-name-ac')
@@ -164,10 +223,19 @@ quitBtn.addEventListener('click', async () => {
     joinRoom.classList.remove('join-room-hide')
     gameRoom.classList.add('game-room-show')
 
-    MySocket.sendMsg(JSON.stringify({
+    MySocket.sendMsg({
         m_type: 'exit',
         data: window.sessionStorage.getItem('userId')
-    }))
+    })
+
+    if (playerList.length === 2) {
+        Reflect.set(playerList, 'length', 0);
+    } else if (playerList.length === 1) {
+        const index = playerList.indexOf(window.sessionStorage.getItem('userId'));
+        if (index !== -1) {
+            playerList.splice(index, 1);
+        }
+    }
 })
 
 addRoom.addEventListener('click', () => {
@@ -208,10 +276,10 @@ newAddRoomConfirm.addEventListener('click', () => {
         if (data.status === 0) {
             // data.data房间ID，根据房间ID加入房间
             isJoinRoomLoading = true
-            MySocket.sendMsg(JSON.stringify({
+            MySocket.sendMsg({
                 m_type: 'join',
                 data: data.data
-            }))
+            })
             // success
             getRoomList()
             roomNameInputer.value = ''
@@ -227,3 +295,44 @@ newAddRoomConfirm.addEventListener('click', () => {
         console.log(err);
     })
 })
+
+// function currentUserFlag() {
+//     const uid = window.sessionStorage.getItem('userId')
+
+//     if (player1.innerText === uid) {
+//         return 'player1'
+//     }
+//     if (player2.innerText === uid) {
+//         return 'player2'
+//     }
+//     return 'error'
+// }
+
+import { init } from './core.js'
+const gameContent = document.getElementById('gameContent')
+const GAME_HEIGTH = 600
+function generateGameContent(size = 1200, mapData = {}, playerData = {}) {
+
+    gameContent.innerHTML = ''
+
+    gameContent.style.width = size + 'px'
+    gameContent.style.height = GAME_HEIGTH + 'px'
+
+    const canvasEl = document.createElement('canvas')
+    const $ = canvasEl.getContext('2d')
+
+    init(canvasEl, $, size, GAME_HEIGTH, 60, gameContent, {
+        map: mapData,
+        player: {
+            ...playerData,
+        }
+    })
+}
+
+const audio = document.createElement('audio')
+audio.src = './resource/bg.mp3'
+audio.loop = true
+
+function loadAudio() {
+    // audio.play()
+}

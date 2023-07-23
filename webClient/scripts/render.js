@@ -6,6 +6,7 @@ class Render {
         this.$ = context.pen
 
         this.fps = fps
+
         this.lastRenderTime = +new Date()
         this.fpsInterval = 1000 / this.fps
     }

@@ -3,16 +3,22 @@ import SocketEvents from '../utils/socketEvents.js'
 class MySocket {
 
     constructor() {
-        // this.socket = new WebSocket("ws://127.0.0.1:8881");
+        this.socket = new WebSocket("ws://127.0.0.1:8881");
         // this.socket = new WebSocket("ws://47.109.17.168:8881");
 
-        // this.socket.onopen = this.onopen
-        // this.socket.onmessage = this.onmessage
-        // this.socket.onclose = this.onclose
+        this.socket.onopen = this.onopen.bind(this)
+        this.socket.onmessage = this.onmessage.bind(this)
+        this.socket.onclose = this.onclose.bind(this)
     }
 
     onopen() {
         console.log("WebSocket opened.");
+        setInterval(() => {
+            this.sendMsg({
+                m_type: 'ping',
+                data: ''
+            })
+        }, 10000);
     }
 
     onclose() {
@@ -32,7 +38,7 @@ class MySocket {
     }
 
     sendMsg(msg) {
-        this.socket.send(msg)
+        this.socket.send(JSON.stringify(msg))
     }
 }
 

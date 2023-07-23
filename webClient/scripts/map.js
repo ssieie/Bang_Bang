@@ -1,8 +1,5 @@
-import { getRandomInt, arrChunk, getRandomFloat, singletonGenerate, getRandColorRange } from '../scripts/utils.js'
+import { loadImg, getRandomInt, arrChunk, getRandomFloat, singletonGenerate, getRandColorRange } from '../scripts/utils.js'
 
-function clearFileName(params = '') {
-    return params.split('/').pop()
-}
 
 function getParabolaBaseA(x, y, vX, vY) {
     // y= a*(x-vX)^2-vY
@@ -10,9 +7,10 @@ function getParabolaBaseA(x, y, vX, vY) {
 }
 
 class Start {
-    constructor(pen) {
+    constructor(pen, w) {
         this.$ = pen
-        this.x = getRandomInt(0, 1000)
+        this.w = w
+        this.x = getRandomInt(0, w)
         this.y = getRandomInt(0, 200)
         this.size = getRandomFloat(2, 4)
         this.speed = getRandomFloat(0.1, 0.5)
@@ -21,7 +19,7 @@ class Start {
 
     move() {
         if (this.x <= 0) {
-            this.x = getRandomInt(0, 1000)
+            this.x = getRandomInt(0, this.w)
             this.y = getRandomInt(0, 200)
             this.size = getRandomFloat(2, 4)
             this.speed = getRandomFloat(0.1, 1)
@@ -45,13 +43,14 @@ class Weather {
     // 根据抛物线顶点公式 y = a(x - h)^2 + k
     // 已知y:-600,x:0,(h,k)顶点坐标为（500，-10）得到-600 = a(0 - 500)^2 - 10
     // 求得a：-0.0024 因为canvas坐标系跟正常坐标系的区别取0.0024
-    constructor(cvs, pen) {
+    constructor(cvs, pen, w) {
+        this.w = w
         this.type = true // sun or moon
-        this.vertex = [500, 10] // 顶点
+        this.vertex = [w / 2, 10] // 顶点
 
-        this.a = getParabolaBaseA(0, 600, 500, 10)
+        this.a = getParabolaBaseA(0, 600, w / 2, 10)
 
-        this.currentX = 1000
+        this.currentX = w
         this.currentY = -600
 
         this.duration = 30 * 1000 // s
@@ -66,7 +65,7 @@ class Weather {
     }
 
     run(sun, moon) {
-        const currentSchedule = this.currentX / 1000
+        const currentSchedule = this.currentX / this.w
         const s = (currentSchedule - 0.5) * 2
         if (this.type) {
             let color = 0
@@ -77,7 +76,7 @@ class Weather {
         } else {
             if (!this.startList.length) {
                 for (let i = 0; i < getRandomInt(10, 30); i++) {
-                    this.startList.push(new Start(this.$))
+                    this.startList.push(new Start(this.$, this.w))
                 }
             }
 
@@ -101,7 +100,7 @@ class Weather {
             this.currentY = this.a * Math.pow((this.currentX - this.vertex[0]), 2) + this.vertex[1]
         } else {
             this.type = !this.type
-            this.currentX = 1000
+            this.currentX = this.w
         }
 
         // console.log();
@@ -112,7 +111,7 @@ class Weather {
 const GWeather = singletonGenerate(Weather)
 
 class Map {
-    constructor(w, h, canvas) {
+    constructor(w, h, canvas, mapData) {
         this.w = w // 1000
         this.h = h // 600
 
@@ -126,21 +125,21 @@ class Map {
 
         this.imgs = {}
 
-        this.init()
+        this.init(mapData)
 
     }
 
-    async init() {
+    async init(mapData) {
         await this.loadAssets()
 
-        this.generateFloor()
+        this.generateFloor(mapData)
 
         this.gennerateCloud()
 
-        this.weather = new GWeather(this.cvs, this.$)
+        this.weather = new GWeather(this.cvs, this.$, this.w)
     }
 
-    generateFloor() {
+    generateFloor(mapData) {
         // 基础底板
         const bY = this.h - this.blockW
         for (let i = 0; i < this.w; i += this.blockW) {
@@ -153,35 +152,35 @@ class Map {
         }
 
         // 隆起地板
-        for (let i = 0; i < 3; i++) {
-            let numbers = []
-            for (let i = 0; i < 4; i++) {
-                const num = getRandomInt(1, 9)
-                if (numbers.includes(num)) {
-                    i--
-                } else {
-                    numbers.push(num)
-                }
-            }
-            numbers = arrChunk(numbers.sort(), 2)
+        // for (let i = 0; i < 3; i++) {
+        //     let numbers = []
+        //     for (let i = 0; i < 4; i++) {
+        //         const num = getRandomInt(1, 9)
+        //         if (numbers.includes(num)) {
+        //             i--
+        //         } else {
+        //             numbers.push(num)
+        //         }
+        //     }
+        //     numbers = arrChunk(numbers.sort(), 2)
 
-            for (const num of numbers) {
-                for (let i = num[0] * 100; i <= num[1] * 100; i += 20) {
-                    for (const floor of this.floorBlock) {
-                        if (floor.x === i) {
-                            floor.y = floor.y - 20
-                        }
-                    }
-                    this.floorBlock.push({
-                        x: i,
-                        y: bY,
-                        type: 1, // 0真实地板，1辅助地板
-                        img: this.imgs['Grass.png'],
-                    })
-                }
-            }
+        //     for (const num of numbers) {
+        //         for (let i = num[0] * 100; i <= num[1] * 100; i += 20) {
+        //             for (const floor of this.floorBlock) {
+        //                 if (floor.x === i) {
+        //                     floor.y = floor.y - 20
+        //                 }
+        //             }
+        //             this.floorBlock.push({
+        //                 x: i,
+        //                 y: bY,
+        //                 type: 1, // 0真实地板，1辅助地板
+        //                 img: this.imgs['Grass.png'],
+        //             })
+        //         }
+        //     }
 
-        }
+        // }
 
     }
 
@@ -226,32 +225,13 @@ class Map {
     }
 
     async loadAssets() {
-        const imgs = await this.loadImg()
+        const imgList = ["./resource/GrassNGrass.png", "./resource/Grass.png", "./resource/Sky2.png", "./resource/Sky.png", "./resource/sun.png", "./resource/moon.png"]
+        const imgs = await loadImg(imgList)
         for (const img of imgs) {
             this.imgs[img.name] = img.uri
         }
     }
 
-    loadImg() {
-        const loadTask = []
-
-        for (const url of ["./resource/GrassNGrass.png", "./resource/Grass.png", "./resource/Sky2.png", "./resource/Sky.png", "./resource/sun.png", "./resource/moon.png"]) {
-            loadTask.push(
-                new Promise(res => {
-                    const img = new Image();
-                    img.src = url;
-                    img.onload = function () {
-                        res({
-                            name: clearFileName(url),
-                            uri: img
-                        })
-                    };
-                })
-            )
-        }
-
-        return Promise.all(loadTask)
-    }
 
     draw() {
         this.weather && this.weather.run(this.imgs['sun.png'], this.imgs['moon.png'])

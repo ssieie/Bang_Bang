@@ -15,7 +15,7 @@
 <link rel="stylesheet" type="text/css" href="./style/join-room.css" />
 <link rel="stylesheet" type="text/css" href="./style/new-game-room-dialog.css" />
 <link rel="stylesheet" type="text/css" href="./style/loading.css" />
-<script type="module" src="./scripts/main.js"></script>
+<!-- <script type="module" src="./scripts/main.js"></script> -->
 <script type="module" src="./scripts/pageScript.js"></script>
 
 <body>
@@ -45,6 +45,7 @@
       <div>player1: <span id="player1"></span></div>
       <div>player2: <span id="player2"></span></div>
     </div>
+    <div class="game-content" id="gameContent"></div>
   </div>
   <dialog id="newGameRoomDialog">
     <div class="title">新建房间</div>
@@ -56,7 +57,7 @@
         </div>
         <div>
           地图大小:
-          <input type="range" id="mapSizeChanger" name="mapsize" value="800" min="600" max="1800" step="50" />
+          <input type="range" id="mapSizeChanger" name="mapsize" value="800" min="800" max="1800" step="50" />
           <span id="mapSize">800</span>
         </div>
       </form>
