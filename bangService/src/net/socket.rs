@@ -322,7 +322,32 @@ pub async fn socket_handler(
             }
             "move" => {
                 println!("!@#@!#@");
-                
+                if let Some(user) = room_user_guard.get(&addr) {
+                    let mut my_redis = MY_REDIS.lock().unwrap();
+                    if let Some(val) = my_redis.get("room_list") {
+                        let room_list: Vec<Room> = serde_json::from_str(&val).unwrap();
+                        
+                        if let Some(room) = room_list.iter().find(|room| room.uuid == user.r_id) {
+                            
+                            if let Some(u_id) = room.player.iter().find(|u| **u != user.u_id) {
+                                if let Some(socket_addr) =
+                                    find_socket_addr_by_u_id(&room_user_guard, u_id)
+                                {
+                                    if let Some(tx) = peer_map.lock().unwrap().get(&socket_addr) {
+                                        
+                                        m_q.push(MQTyper {
+                                            tx: tx.clone(),
+                                            send: MessageBody {
+                                                m_type: String::from("moved"),
+                                                data: msg_body.data,
+                                            },
+                                        })
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
             _ => {}
         }
