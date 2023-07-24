@@ -103,7 +103,7 @@ function getRoomList() {
     })
 }
 
-removeIndexPage()
+// removeIndexPage()
 
 refresh.addEventListener('click', () => {
     getRoomList()
@@ -118,7 +118,7 @@ SocketEvents.subscribe('join', (msg) => {
     hideLoadinng()
     isJoinRoom = true
     isJoinRoomLoading = false
-    checkRoomPage(msg[1], msg[2], msg[3])
+    checkRoomPage(msg[1], {}, msg[2])
 })
 SocketEvents.subscribe('join_err', (msg) => {
     hideLoadinng()
@@ -209,7 +209,9 @@ async function checkRoomPage(roomInfo = {}, mapInfo = null, playData = null) {
     roomName.innerText = '房间名称:' + roomInfo.name
     roomName.classList.add('room-name-ac')
 
-    generateGameContent(roomInfo.size, mapInfo, playData)
+    if (playData) {
+        generateGameContent(roomInfo.size, mapInfo, playData)
+    }
 }
 quitBtn.addEventListener('click', async () => {
     getRoomList()
@@ -313,7 +315,7 @@ newAddRoomConfirm.addEventListener('click', () => {
 import { init, exit } from './core.js'
 const gameContent = document.getElementById('gameContent')
 const GAME_HEIGTH = 600
-function generateGameContent(size = 1200, mapData = {}, playerData = {}) {
+function generateGameContent(size = 1200, mapData, playerData) {
 
     gameContent.innerHTML = ''
 
@@ -326,7 +328,7 @@ function generateGameContent(size = 1200, mapData = {}, playerData = {}) {
     init(canvasEl, $, size, GAME_HEIGTH, 60, gameContent, {
         map: mapData,
         player: {
-            ...playerData,
+            flag: playerData,
         }
     })
 }
@@ -336,5 +338,5 @@ audio.src = './resource/bg.mp3'
 audio.loop = true
 
 function loadAudio() {
-    // audio.play()
+    audio.play()
 }

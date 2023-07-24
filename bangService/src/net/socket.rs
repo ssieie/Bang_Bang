@@ -98,28 +98,31 @@ pub async fn socket_handler(
                             for it in &mut room_list {
                                 if it.uuid == r_u.r_id {
                                     it.player.retain(|x| *x != r_u.u_id);
-                                    if let Some(user) = it.player.get(0) {
-                                        if let Some(socket_addr) =
-                                            find_socket_addr_by_u_id(&room_user_guard, user)
-                                        {
-                                            if let Some(tx) =
-                                                peer_map.lock().unwrap().get(&socket_addr)
-                                            {
-                                                m_q.push(MQTyper {
-                                                    tx: tx.clone(),
-                                                    send: MessageBody {
-                                                        m_type: String::from("exited"),
-                                                        data: String::from(r_u.u_id.clone()),
-                                                    },
-                                                })
-                                            }
-                                        }
-                                    }
+                                    break;
                                 }
                             }
                         }
 
                         my_redis.set("room_list", serde_json::to_string(&room_list).unwrap());
+                    }
+
+                    if let Some(socket_addr) =
+                        find_socket_addr_by_u_id(&room_user_guard, &r_u.enemy_id)
+                    {
+                        if let Some(tx) = peer_map.lock().unwrap().get(&socket_addr) {
+                            m_q.push(MQTyper {
+                                tx: tx.clone(),
+                                send: MessageBody {
+                                    m_type: String::from("exited"),
+                                    data: String::from(r_u.u_id.clone()),
+                                },
+                            })
+                        }
+
+                        // 清楚对手的enemy_id(也就是自己)
+                        if let Some(enemy) = room_user_guard.get_mut(&socket_addr) {
+                            enemy.enemy_id = String::new();
+                        }
                     }
 
                     room_user_guard.remove(&addr);
@@ -151,16 +154,25 @@ pub async fn socket_handler(
                                     if room.uuid == msg_body.data {
                                         is_join = true;
                                         if room.player.len() < 2 {
+                                            let mut enemy_id: String = String::new();
                                             if room.player.len() == 1 {
                                                 // 为房间内其他人发送消息
                                                 match room.player.get(0) {
                                                     Some(u) => {
+                                                        enemy_id.push_str(u);
                                                         if let Some(socket_addr) =
                                                             find_socket_addr_by_u_id(
                                                                 &room_user_guard,
                                                                 u,
                                                             )
                                                         {
+                                                            // 设置对手的enemy_id(也就是自己)
+                                                            if let Some(enemy) = room_user_guard
+                                                                .get_mut(&socket_addr)
+                                                            {
+                                                                enemy.enemy_id = user_uuid.clone();
+                                                            }
+
                                                             if let Some(tx) = peer_map
                                                                 .lock()
                                                                 .unwrap()
@@ -184,13 +196,19 @@ pub async fn socket_handler(
 
                                             room.player.push(user_uuid.clone());
 
-                                            room_user_guard.insert(
-                                                addr,
-                                                RoomUser::new(
-                                                    user_uuid.clone(),
-                                                    msg_body.data.clone(),
-                                                ),
+                                            let mut room_user = RoomUser::new(
+                                                user_uuid.clone(),
+                                                msg_body.data.clone(),
                                             );
+                                            room_user.enemy_id = enemy_id;
+
+                                            room_user_guard.insert(addr, room_user);
+
+                                            let player_flag = room
+                                                .player
+                                                .iter()
+                                                .position(|x| x == &user_uuid)
+                                                .unwrap();
 
                                             let m_data = (
                                                 user_uuid.clone(),
@@ -200,6 +218,7 @@ pub async fn socket_handler(
                                                     uuid: room.uuid.clone(),
                                                     player: room.player.clone(),
                                                 },
+                                                player_flag + 1,
                                             );
 
                                             m_q.push(MQTyper {
@@ -257,39 +276,32 @@ pub async fn socket_handler(
 
                             for it in &mut room_list {
                                 if it.uuid == user.r_id {
-                                    let mut is_exit = false;
                                     it.player.retain(|x| {
                                         if *x == user.u_id {
-                                            is_exit = true;
                                             return false;
                                         }
                                         true
                                     });
-                                    if it.player.len() == 1 && is_exit {
-                                        // 通知别的玩家退出
-                                        match it.player.get(0) {
-                                            Some(u) => {
-                                                if let Some(socket_addr) =
-                                                    find_socket_addr_by_u_id(&room_user_guard, u)
-                                                {
-                                                    if let Some(tx) =
-                                                        peer_map.lock().unwrap().get(&socket_addr)
-                                                    {
-                                                        m_q.push(MQTyper {
-                                                            tx: tx.clone(),
-                                                            send: MessageBody {
-                                                                m_type: String::from("exited"),
-                                                                data: String::from(
-                                                                    user.u_id.clone(),
-                                                                ),
-                                                            },
-                                                        })
-                                                    }
-                                                }
-                                            }
-                                            None => {}
-                                        }
-                                    }
+                                    break;
+                                }
+                            }
+
+                            if let Some(socket_addr) =
+                                find_socket_addr_by_u_id(&room_user_guard, &user.enemy_id)
+                            {
+                                if let Some(tx) = peer_map.lock().unwrap().get(&socket_addr) {
+                                    m_q.push(MQTyper {
+                                        tx: tx.clone(),
+                                        send: MessageBody {
+                                            m_type: String::from("exited"),
+                                            data: String::from(user.u_id.clone()),
+                                        },
+                                    })
+                                }
+
+                                // 清除对手的enemy_id(也就是自己)
+                                if let Some(enemy) = room_user_guard.get_mut(&socket_addr) {
+                                    enemy.enemy_id = String::new();
                                 }
                             }
                         }
@@ -321,30 +333,35 @@ pub async fn socket_handler(
                 });
             }
             "move" => {
-                println!("!@#@!#@");
                 if let Some(user) = room_user_guard.get(&addr) {
-                    let mut my_redis = MY_REDIS.lock().unwrap();
-                    if let Some(val) = my_redis.get("room_list") {
-                        let room_list: Vec<Room> = serde_json::from_str(&val).unwrap();
-                        
-                        if let Some(room) = room_list.iter().find(|room| room.uuid == user.r_id) {
-                            
-                            if let Some(u_id) = room.player.iter().find(|u| **u != user.u_id) {
-                                if let Some(socket_addr) =
-                                    find_socket_addr_by_u_id(&room_user_guard, u_id)
-                                {
-                                    if let Some(tx) = peer_map.lock().unwrap().get(&socket_addr) {
-                                        
-                                        m_q.push(MQTyper {
-                                            tx: tx.clone(),
-                                            send: MessageBody {
-                                                m_type: String::from("moved"),
-                                                data: msg_body.data,
-                                            },
-                                        })
-                                    }
-                                }
-                            }
+                    if let Some(socket_addr) =
+                        find_socket_addr_by_u_id(&room_user_guard, &user.enemy_id)
+                    {
+                        if let Some(tx) = peer_map.lock().unwrap().get(&socket_addr) {
+                            m_q.push(MQTyper {
+                                tx: tx.clone(),
+                                send: MessageBody {
+                                    m_type: String::from("moved"),
+                                    data: msg_body.data,
+                                },
+                            })
+                        }
+                    }
+                }
+            }
+            "attack" => {
+                if let Some(user) = room_user_guard.get(&addr) {
+                    if let Some(socket_addr) =
+                        find_socket_addr_by_u_id(&room_user_guard, &user.enemy_id)
+                    {
+                        if let Some(tx) = peer_map.lock().unwrap().get(&socket_addr) {
+                            m_q.push(MQTyper {
+                                tx: tx.clone(),
+                                send: MessageBody {
+                                    m_type: String::from("attacked"),
+                                    data: msg_body.data,
+                                },
+                            })
                         }
                     }
                 }

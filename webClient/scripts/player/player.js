@@ -2,6 +2,7 @@
 import { loadImg, throttle } from "../utils.js"
 import keyboardEvents from "../utils/keyboardEvents.js"
 import MySocket from '../net/socket.js'
+import SocketEvents from '../utils/socketEvents.js'
 
 class Play {
     constructor(x, y, isSelf, lOrR, assets, cvs, pen) {
@@ -177,16 +178,30 @@ class Player {
             move: {
                 state: false,
                 self: null,
-                handler: (x, y) => {
+                handler: (x, y, pos) => {
                     MySocket.sendMsg({
                         m_type: 'move',
-                        data: [x, y]
+                        data: JSON.stringify({
+                            x, y, pos
+                        })
+                    })
+                }
+            },
+            attack: {
+                state: false,
+                self: null,
+                handler: (x, y, pos) => {
+                    MySocket.sendMsg({
+                        m_type: 'attack',
+                        data: JSON.stringify({
+                            x, y, pos
+                        })
                     })
                 }
             }
         }
 
-        this.playerFlag = 1 // p1 or p2
+        this.playerFlag = playerData.flag // p1 or p2
 
         this.$ = canvas.pen
         this.cvs = canvas.cvs
@@ -204,6 +219,7 @@ class Player {
 
         // attack
         this.attackTimer = null
+        this.attackEnemyTimer = null
 
         this.init()
     }
@@ -211,9 +227,72 @@ class Player {
     async init() {
         await this.loadAssets()
 
+        SocketEvents.subscribe('moved', this.moveHandler.bind(this))
+        SocketEvents.subscribe('attacked', this.attackedHandler.bind(this))
+
         this.loadKeyboardListener()
 
         this.loadPlayer()
+
+        this.enemyPlayer = this.getEnemyPlayer()
+    }
+
+    moveHandler(val) {
+        this.enemyPlayer.lOrR = val.pos
+        this.enemyPlayer.currentX = val.x
+        this.enemyPlayer.currentY = val.y
+    }
+
+    attackedHandler(val) {
+        this.enemyPlayer.attackIng = true
+        this.attackEnemyTimer = setInterval(() => {
+            if (this.enemyPlayer.attackStep === 3) {
+                this.enemyPlayer.attackIng = false
+                this.enemyPlayer.attackStep = 1
+
+                clearInterval(this.attackEnemyTimer)
+                this.attackEnemyTimer = null
+            } else {
+                this.enemyPlayer.attackStep += 1
+            }
+        }, 95);
+        const attackAudio = document.createElement('audio')
+        attackAudio.src = './resource/attack.mp3'
+        attackAudio.play()
+        // 判断是否击中
+        this.hitOrNot(this.enemyPlayer, this.getSelfPlayer())
+    }
+
+    hitOrNot(source, target) {
+
+        if (source.lOrR === 'right') {
+            // 取右边攻击范围
+            if (this.isPointInRect(source.currentX + PLAYER_W, source.currentY + 20, 50, 50, target.currentX + PLAYER_W / 2, target.currentY + PLAYER_H / 2)) {
+                target.life = target.life - 2
+                const attackAudio = document.createElement('audio')
+                attackAudio.src = './resource/attacked.mp3'
+                attackAudio.play()
+                if (target.life < 0) {
+                    target.life = 100
+                }
+            }
+        } else {
+
+            if (this.isPointInRect(source.currentX - 45, source.currentY + 20, 50, 50, target.currentX + PLAYER_W / 2, target.currentY + PLAYER_H / 2)) {
+                target.life = target.life - 2
+                const attackAudio = document.createElement('audio')
+                attackAudio.src = './resource/attacked.mp3'
+                attackAudio.play()
+                if (target.life < 0) {
+                    target.life = 100
+                }
+            }
+        }
+    }
+
+    isPointInRect(rectX, rectY, rectWidth, rectHeight, x, y) {
+        return x >= rectX && x <= rectX + rectWidth &&
+            y >= rectY && y <= rectY + rectHeight;
     }
 
     loadPlayer() {
@@ -290,8 +369,10 @@ class Player {
             const self = this.getSelfPlayer()
             if (!moveLeftTimer) {
                 self.moveCommand = self.stop
-                this.sendQueue.move.state = false
-                this.sendQueue.move.self = null
+                if (!self.jumpIng) {
+                    this.sendQueue.move.state = false
+                    this.sendQueue.move.self = self
+                }
             }
             if (moveRightTimer) {
                 clearInterval(moveRightTimer)
@@ -319,8 +400,11 @@ class Player {
             const self = this.getSelfPlayer()
             if (!moveRightTimer) {
                 self.moveCommand = self.stop
-                this.sendQueue.move.state = false
-                this.sendQueue.move.self = self
+                if (!self.jumpIng) {
+                    this.sendQueue.move.state = false
+                    this.sendQueue.move.self = self
+                }
+
             }
             if (moveLeftTimer) {
                 clearInterval(moveLeftTimer)
@@ -350,6 +434,8 @@ class Player {
     playerAttack() {
         const self = this.getSelfPlayer()
         self.attackIng = true
+        this.sendQueue.attack.state = true
+        this.sendQueue.attack.self = self
         this.attackTimer = setInterval(() => {
             if (self.attackStep === 3) {
                 self.attackIng = false
@@ -364,6 +450,8 @@ class Player {
         const attackAudio = document.createElement('audio')
         attackAudio.src = './resource/attack.mp3'
         attackAudio.play()
+        // 判断是否击中
+        this.hitOrNot(self, this.enemyPlayer)
     }
 
     getSelfPlayer() {
@@ -373,16 +461,27 @@ class Player {
             }
         }
     }
+    getEnemyPlayer() {
+        for (const it in this.playerMap) {
+            if (!this.playerMap[it].isSelf) {
+                return this.playerMap[it]
+            }
+        }
+    }
 
     behaviorSender() {
         for (const key in this.sendQueue) {
             if (this.sendQueue[key].state) {
+                const target = this.sendQueue[key]
                 switch (key) {
                     case 'move':
-                        const target = this.sendQueue[key]
-                        target.handler(target.self.currentX, target.self.currentY)
+                        target.handler(target.self.currentX, target.self.currentY, target.self.lOrR)
                         break;
-
+                    case 'attack':
+                        target.handler(target.self.currentX, target.self.currentY, target.self.lOrR)
+                        this.sendQueue.attack.state = false
+                        this.sendQueue.attack.self = null
+                        break
                     default:
                         break;
                 }

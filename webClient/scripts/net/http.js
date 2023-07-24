@@ -1,4 +1,4 @@
-const baseUrl = "http://192.168.2.136:8880"
+const baseUrl = "http://127.0.0.1:8880"
 // const baseUrl = "http://47.109.17.168:8880"
 
 async function fetchJson(url, options = {}) {

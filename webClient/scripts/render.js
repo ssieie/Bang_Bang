@@ -10,7 +10,7 @@ class Render {
         this.lastRenderTime = +new Date()
         this.fpsInterval = 1000 / this.fps
 
-        this.sendSpeed = 1 // 
+        this.sendSpeed = 80 // 
         this.lastSendTime = +new Date()
         this.snedInterval = 1000 / this.sendSpeed
     }
