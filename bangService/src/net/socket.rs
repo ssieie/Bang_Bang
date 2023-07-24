@@ -109,9 +109,7 @@ pub async fn socket_handler(
                                                     tx: tx.clone(),
                                                     send: MessageBody {
                                                         m_type: String::from("exited"),
-                                                        data: String::from(
-                                                            r_u.u_id.clone(),
-                                                        ),
+                                                        data: String::from(r_u.u_id.clone()),
                                                     },
                                                 })
                                             }
@@ -321,6 +319,10 @@ pub async fn socket_handler(
                         data: String::from(""),
                     },
                 });
+            }
+            "move" => {
+                println!("!@#@!#@");
+                
             }
             _ => {}
         }

@@ -1,4 +1,4 @@
-import { loadImg, getRandomInt, arrChunk, getRandomFloat, singletonGenerate, getRandColorRange } from '../scripts/utils.js'
+import { loadImg, getRandomInt, arrChunk, getRandomFloat, getRandColorRange } from '../scripts/utils.js'
 
 
 function getParabolaBaseA(x, y, vX, vY) {
@@ -108,8 +108,6 @@ class Weather {
 
 }
 
-const GWeather = singletonGenerate(Weather)
-
 class Map {
     constructor(w, h, canvas, mapData) {
         this.w = w // 1000
@@ -136,7 +134,7 @@ class Map {
 
         this.gennerateCloud()
 
-        this.weather = new GWeather(this.cvs, this.$, this.w)
+        this.weather = new Weather(this.cvs, this.$, this.w)
     }
 
     generateFloor(mapData) {

@@ -1,19 +1,25 @@
 * {
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  padding: 0;
+}
+
+@font-face {
+  font-family: "KirangHaerang";
+  src: url("../resource/Kirang_Haerang/HanaleiFill-Regular.ttf")
+    format("truetype");
 }
 
 html {
-    overflow: hidden;
-    -webkit-user-select: none;
-    /* webkit浏览器 */
+  overflow: hidden;
+  -webkit-user-select: none;
+  /* webkit浏览器 */
 
-    -moz-user-select: none;
-    /* Firefox */
+  -moz-user-select: none;
+  /* Firefox */
 
-    -ms-user-select: none;
-    /* IE10+ */
+  -ms-user-select: none;
+  /* IE10+ */
 
-    user-select: none;
-    /* 标准语法 */
+  user-select: none;
+  /* 标准语法 */
 }

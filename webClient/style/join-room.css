@@ -48,7 +48,7 @@
     /* 转大写 */
     text-transform: uppercase;
     text-align: center;
-    font-family: 'Hanalei Fill', cursive;
+    font-family: "KirangHaerang", cursive;
     outline: none;
     -webkit-box-reflect: below 0px linear-gradient(transparent, rgba(0, 0, 0, 0.2));
     /* 自定义属性 --c,可通过 var 函数对其调用 */
@@ -89,7 +89,7 @@
     font-weight: bold;
     font-size: 20px;
     color: #333;
-    font-family: 'Hanalei Fill', cursive;
+    font-family: "KirangHaerang", cursive;
 }
 
 .join-room .game-content{

@@ -1,11 +1,7 @@
 import Map from './map.js'
 import Player from './player/player.js'
 import Render from './render.js'
-import { singletonGenerate } from './utils.js'
-
-const GMap = singletonGenerate(Map)
-const GPlayer = singletonGenerate(Player)
-const GRender = singletonGenerate(Render)
+// import { singletonGenerate } from './utils.js'
 
 let RenderInstace = null
 
@@ -15,16 +11,16 @@ const instances = {
 }
 
 function initMap(w, h, canvas, mapData) {
-    instances.Map = new GMap(w, h, canvas, mapData)
+    instances.Map = new Map(w, h, canvas, mapData)
 }
 
 function initPlayer(w, h, canvas, data) {
-    instances.Player = new GPlayer(w, h, canvas, data)
+    instances.Player = new Player(w, h, canvas, data)
 }
 
 
 function initRender(fps = 30) {
-    RenderInstace = new GRender(fps, canvas)
+    RenderInstace = new Render(fps, canvas)
 
     RenderInstace.run(instances)
 }
@@ -47,4 +43,11 @@ export function init(cvs, pen, w, h, fps, target, data) {
 
     initRender(fps)
 
+}
+
+export function exit() {
+    RenderInstace.clear()
+    RenderInstace = null
+    instances.Map = null
+    instances.Player = null
 }

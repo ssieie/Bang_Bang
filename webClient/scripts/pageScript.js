@@ -40,7 +40,6 @@ async function removeIndexPage() {
     getRoomList()
 
     loadAudio()
-    checkRoomPage()
 }
 
 const roomWrap = document.getElementById('roomWrap')
@@ -236,6 +235,9 @@ quitBtn.addEventListener('click', async () => {
             playerList.splice(index, 1);
         }
     }
+
+    exit()
+    gameContent.innerHTML = ''
 })
 
 addRoom.addEventListener('click', () => {
@@ -308,7 +310,7 @@ newAddRoomConfirm.addEventListener('click', () => {
 //     return 'error'
 // }
 
-import { init } from './core.js'
+import { init, exit } from './core.js'
 const gameContent = document.getElementById('gameContent')
 const GAME_HEIGTH = 600
 function generateGameContent(size = 1200, mapData = {}, playerData = {}) {
